@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
+        <link rel="stylesheet" type="text/css" href="css/index.css" />
+        <title>Hello World</title>
+          
+<script src="js/jquery-1.10.1.min.js"></script>       
+<script type="text/javascript" src="js/sha1.js"></script>     
+<script type="text/javascript" src="js/oauth.js"></script>        
+<script language="JavaScript" type="text/javascript" src="js/jsbn.js"></script>   
+<script language="JavaScript" type="text/javascript" src="js/jsbn2.js"></script>   
+<script language="JavaScript" type="text/javascript" src="js/rsa.js"></script>   
+<script language="JavaScript" type="text/javascript" src="js/rsa2.js"></script>   
+<script language="JavaScript" type="text/javascript" src="js/base64.js"></script>   
+<!-- for crypto.js --> 
+<script src="http://yui.yahooapis.com/2.9.0/build/yahoo/yahoo-min.js"></script> 
+<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/core.js"></script> 
+<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/md5.js"></script> 
+<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/sha1.js"></script> 
+<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/sha256.js"></script> 
+<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/ripemd160.js"></script> 
+<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/x64-core.js"></script> 
+<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/sha512.js"></script> 
+<script language="JavaScript" type="text/javascript" src="js/rsapem-1.1.js"></script> 
+<script language="JavaScript" type="text/javascript" src="js/rsasign-1.2.js"></script> 
+<script language="JavaScript" type="text/javascript" src="js/asn1hex-1.1.js"></script> 
+<script language="JavaScript" type="text/javascript" src="js/x509-1.1.js"></script> 
+<script language="JavaScript" type="text/javascript" src="js/crypto-1.1.js"></script>     
+<script type="text/javascript">
+function sign(form) {
+    var accessor = { consumerSecret: form.consumerSecret.value
+                   , tokenSecret   : form.tokenSecret.value};
+    var message = { method: form.httpMethod.value
+                  , action: form.URL.value
+                  , parameters: OAuth.decodeForm(form.parameters.value)
+                  };
+    for (var e = 0; e < form.elements.length; ++e) {
+        var input = form.elements[e];
+        if (input.name != null && input.name.substring(0, 6) == "oauth_"
+            && input.value != null && input.value != ""
+            && (!(input.type == "checkbox" || input.type == "radio") || input.checked))
+        {
+            message.parameters.push([input.name, input.value]);
+        }
+    }
+    OAuth.SignatureMethod.sign(message, accessor);
+    showText("normalizedParameters", OAuth.SignatureMethod.normalizeParameters(message.parameters));
+    showText("signatureBaseString" , OAuth.SignatureMethod.getBaseString(message));
+    showText("signature"           , OAuth.getParameter(message.parameters, "oauth_signature"));
+    showText("authorizationHeader" , OAuth.getAuthorizationHeader("", message.parameters));
+    return false;
+}
+function showText(elementId, text) {
+    var child = document.createTextNode(text);
+    var element = document.getElementById(elementId);
+    if (element.hasChildNodes()) {
+        element.replaceChild(child, element.firstChild);
+    } else {
+        element.appendChild(child);
+    }
+}
+function freshTimestamp() {
+    document.request.oauth_timestamp.value = OAuth.timestamp();
+}
+function freshNonce() {
+    document.request.oauth_nonce.value = OAuth.nonce(11);
+}
+function doSign() {
+  var rsa = new RSAKey();
+  rsa.readPrivateKeyFromPEMString(document.getElementById("private_key").value);
+  document.getElementById("signatureBaseString").innerText = document.getElementById("signatureBaseString").innerText.replace("oauth_signature_method%3DHMAC-SHA1", "oauth_signature_method%3DRSA-SHA1")
+  
+  var hSig = rsa.signString(document.getElementById("signatureBaseString").innerText, "sha1");
+  //document.getElementById("signature").innerText = hex2b64(hSig);
+  document.getElementById("signature").innerText = encodeURIComponent(hex2b64(hSig)).replace(/'/g,"%27").replace(/"/g,"%22");
+  
+  document.getElementById("authorizationHeader").innerText = document.getElementById("authorizationHeader").innerText.replace("oauth_signature_method=\"HMAC-SHA1\"", "oauth_signature_method=\"RSA-SHA1\"");
+  document.getElementById("authorizationHeader").innerText = document.getElementById("authorizationHeader").innerText.replace(/oauth_signature=".*"/gi, "oauth_signature=\"" + document.getElementById("signature").innerText + "\"");
+  
+$.ajax({
+  type: "GET",
+  url: $("#url").val(),
+  data: {
+    Latlng: 'coordinates.coordinates',
+    texts: 'text'
+  },
+  dataType: "json",
+  success: function(data) {
+    console.log(data);
+  }
+});
+  
+}
+    </script>
+    </head>
+<body onLoad="freshNonce();freshTimestamp()">
+To compute an
+<a href="http://oauth.net">OAuth</a>
+<a href="http://oauth.net/core/1.0/#signing_process">request signature</a>,
+fill in this form and click the 'Sign' button.
+    <form name="request">
+      <table border="0">
+        <tr><th align="right">HTTP method:      </th><td><input name="httpMethod"             type="text" size="5"  value="POST"/></td></tr>
+        <tr><th align="right">Private Key:              </th><td>
+<textarea name="private_key" id="private_key">
+-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEA2fEibNOpdAhZv/shDsIEu1KRipxIw8cUEHJ2vuWl3lqRivlt
+5vscbX1OOt/IOGuTdLVGvqmFQfhN1htv9REKZrBbJLkzdHC9/906gSi4Owy4WRFT
+4feGnz8unWtniMtrbcouNInq3BPfo7+b4YMCv83fHEJpEka7MJooMvS94AymlfuT
+uV98VkNTcagCA5P8e96FoVEp3xAKF7DTYKQTfIS7S4sYXR4uyKbht8T2hD4gWDos
+7Fe0DpF+vnOhLYmFARDOH6jzZ6pMiTa+3d95PXr/xHm6/5DTZ8VZsrYjs145CCxQ
+fOd3zN5aFCKeeTkwmDzde+zkR4tx3YTFis9TkQIDAQABAoIBAQCrNX8xtuV7vcOj
+yYiiq1BESA0FstiG1DGy6fjW5llzX/rODjyEI+ilKrb2ES6dBAWGvZGh3lJNDN84
+v70n7AcbvJcdNlBxvM/F3OlE5dQ0rz1y2uXmsikTmPLpv6JKGGOAkD/UDjRuRz58
+yN2QPvc97mDDNniMXvxWpgPGY/V1t4a84rI67N3jiPEzi1omlzWBe58NY4O1n99k
+JBnXj2hFEyZvvUhB9gamHLFpmYp1GWB+IWkqbZfASGZ7PW44/7AsgrHs+tOmMLWQ
+0BK1fwL88qOGAMry/hO7MiOjJX2tFMJFVNhA31PuPYDKQlAHfU5Rcwh3qrRAnDID
+UEv4EtRBAoGBAPoZPjZ8Bowmw52kiiqpufr0xINP4ZndbuK7OIUoDWDJWIwxkIMF
+hH/Uq9KsDiBYmeNU5TVlYAug0Gnl0+hcp9fuv/VRJp4bSxoqG0g7INKq+FhS3bwo
+VSdrZ1zH3/Nomf1yzk7M7FprBfuAFN3fqLysC/JZ8NAVsCNOLFddD1hFAoGBAN8V
+pPbHpRJkzxsoFtTlF6nZweo/H+EH/wxAY2RCr7hYnid9P+YeL/d9cQbcFWlmjjuA
+/EMwNv7mUx4Yv6hQuQ42M9DVIO4qUacyJgHgIraVbRJJtYdxsPKbkx58Fdn1RMNX
+CZEpukpTOBpv/4osOV3pM29Yi9JsSlFoF3RSoaDdAoGASU7g54OPP8GVET5LqZm6
+hA7/EyZ1EG7Rs/AA7zcAROB/7ggRPfZ+EiI6gzQfp+eQpAwca3xdnMr0jDXr2W5f
+XHIFHlk9IpcJeo/hE1kRk+69gNY5XI/N9hILaCzGPkjo6luekYaLuS0pwcCXXTnT
+8gnULqOibLwOtyqQ4MLMXqkCgYBH5e/u4VVgYkElnXwOTW+c/GO1HXcmza7zweTG
+sX90yIrga0um3N/UwgclkNUNzVHV97JV7TosWQs8zfknRC0AWZPFoIsmd1ktq8n4
+HMbTVcF7fWoWJxxCdMWrs45PWu84jdq1gF9cCQox6xrO64XpsHk1T7JwtRoWtpeo
+k+EnuQKBgQCoBKsxwKjYAC/lfMvLIldp+fTWdQwhlQKrm3ymxpBUbsVvR18fvxkn
+3qnj/giRvkp3AapdJKMFhkqlLPmePEzLzz88dZpW7e5qvW+cL98nyRRRyhGOGqtl
+/j/2HhEhhXcCs5JCib2SrjGvEk1XRRaZLsYFn0mOxyXb4dRvKd3V+Q==
+-----END RSA PRIVATE KEY-----
+</textarea></td></tr>
+        <tr><th align="right">URL:              </th><td><input name="URL" id="url"           type="text" size="80" value="http://localhost:8080/plugins/servlet/oauth/request-token"></td></tr>
+        <tr><th align="right">parameters:       </th><td><input name="parameters"             type="text" size="80" value=""/></td></tr>
+        <tr><th align="right">version:          </th><td><input name="oauth_version"          type="text" size="4"  value="1.0"/></td></tr>
+        <tr><th align="right">consumer key:     </th><td><input name="oauth_consumer_key"     type="text" size="64" value="hotovo"/></td></tr>
+        <tr><th align="right">consumer secret:  </th><td><input name="consumerSecret"         type="text" size="64" value=""/></td></tr>
+        <tr><th align="right">token:            </th><td><input name="oauth_token"            type="text" size="64" value=""/></td></tr>
+        <tr><th align="right">token secret:     </th><td><input name="tokenSecret"            type="text" size="64" value=""/></td></tr>
+        <tr><th align="right">timestamp:        </th><td><input name="oauth_timestamp"        type="text" size="12" value="freshTimestamp()"/>
+                                                         <input type="button" value="now" onClick="freshTimestamp()"/></td></tr>
+        <tr><th align="right">nonce:            </th><td><input name="oauth_nonce"            type="text" size="12" value="freshNonce()"/>
+                                                         <input type="button" value="random" onClick="freshNonce()"/></td></tr>
+        <tr><th align="right">signature method: </th><td><input name="oauth_signature_method" type="text" size="12" value="HMAC-SHA1"/></td></tr>
+      </table>
+      <input type="button" value="Sign" onClick="sign(document.request)"/>
+      <input type="reset"  value="Reset"/>
+      <input type="button"  value="Signature" onClick="doSign();"/>
+      <br/>
+      <table border="2" width="100%">
+        <tr valign="baseline"><th align="right">normalized parameters:</th><td><pre id="normalizedParameters">&nbsp;</pre></td></tr>
+        <tr valign="baseline"><th align="right">signature base string:</th><td><pre id="signatureBaseString"> &nbsp;</pre></td></tr>
+        <tr valign="baseline"><th align="right">signature:            </th><td><pre id="signature">           &nbsp;</pre></td></tr>
+        <tr valign="baseline"><th align="right">Authorization header: </th><td><pre id="authorizationHeader"> &nbsp;</pre></td></tr>
+      </table>
+    </form>
+  </body>
+</html>
