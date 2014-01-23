@@ -25,7 +25,8 @@
         <link rel="stylesheet" type="text/css" href="css/index.css" />
         <title>Hello World</title>
           
-<script src="js/jquery-1.10.1.min.js"></script>       
+<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="js/jquery.mobile-1.4.0.min.js"></script>       
 <script type="text/javascript" src="js/sha1.js"></script>     
 <script type="text/javascript" src="js/oauth.js"></script>        
 <script language="JavaScript" type="text/javascript" src="js/jsbn.js"></script>   
@@ -48,6 +49,12 @@
 <script language="JavaScript" type="text/javascript" src="js/x509-1.1.js"></script> 
 <script language="JavaScript" type="text/javascript" src="js/crypto-1.1.js"></script>     
 <script type="text/javascript">
+$( document ).bind( "mobileinit", function() {
+    // Make your jQuery Mobile framework configuration changes here!
+    $.support.cors = true;
+    $.mobile.allowCrossDomainPages = true; 
+});
+
 function sign(form) {
     var accessor = { consumerSecret: form.consumerSecret.value
                    , tokenSecret   : form.tokenSecret.value};
@@ -97,20 +104,79 @@ function doSign() {
   
   document.getElementById("authorizationHeader").innerText = document.getElementById("authorizationHeader").innerText.replace("oauth_signature_method=\"HMAC-SHA1\"", "oauth_signature_method=\"RSA-SHA1\"");
   document.getElementById("authorizationHeader").innerText = document.getElementById("authorizationHeader").innerText.replace(/oauth_signature=".*"/gi, "oauth_signature=\"" + document.getElementById("signature").innerText + "\"");
+ 
+}
+
+function createCORSRequest(method, url) {
+  var xhr = new XMLHttpRequest();
+  if ("withCredentials" in xhr) {
+
+    // Check if the XMLHttpRequest object has a "withCredentials" property.
+    // "withCredentials" only exists on XMLHTTPRequest2 objects.
+    xhr.open(method, url, true);
+
+  } else if (typeof XDomainRequest != "undefined") {
+
+    // Otherwise, check if XDomainRequest.
+    // XDomainRequest only exists in IE, and is IE's way of making CORS requests.
+    xhr = new XDomainRequest();
+    xhr.open(method, url, false);
+
+  } else {
+
+    // Otherwise, CORS is not supported by the browser.
+    xhr = null;
+
+  }
+  return xhr;
+}
+
+function doRequest() {
+
+var url = "http://google.com";
+
+var xhr = createCORSRequest('GET', url);
+if (!xhr) {
+  throw new Error('CORS not supported');
+}
+
+  // Response handlers.
+  xhr.onload = function() {
+    var text = xhr.responseText;
+    alert('Response from CORS request to ' + url);
+    alert(text);
+  };
+ 
+  request.onreadystatechange = function(){
+  alert("onreadystatechange");
+  }
+
+  xhr.onerror = function() {
+    alert('Woops, there was an error making the request.');
+  };
   
-$.ajax({
+xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');  
+//xhr.setRequestHeader('Authorization', "Basic YWRtaW46YWRtaW4=");
+//xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
+//xhr.withCredentials = true;
+xhr.send();
+/*
+$.getJSON({
+
   type: "GET",
-  url: $("#url").val(),
+  url: "http://localhost:8080/rest/api/2/project",
   data: {
-    Latlng: 'coordinates.coordinates',
-    texts: 'text'
   },
   dataType: "json",
+  contentType: "application/json",
+  beforeSend: function (xhr) {
+    xhr.setRequestHeader ("Authorization", "Basic YWRtaW46YWRtaW4=");
+},
   success: function(data) {
-    $("#output").val(data);
+    console.log(data);
   }
 });
-  
+*/
 }
     </script>
     </head>
@@ -168,6 +234,7 @@ k+EnuQKBgQCoBKsxwKjYAC/lfMvLIldp+fTWdQwhlQKrm3ymxpBUbsVvR18fvxkn
       <input type="button" value="Sign" onClick="sign(document.request)"/>
       <input type="reset"  value="Reset"/>
       <input type="button"  value="Signature" onClick="doSign();"/>
+      <input type="button" value="Request" onClick="doRequest();"/>
       <br/>
       <table border="2" width="100%">
         <tr valign="baseline"><th align="right">normalized parameters:</th><td><pre id="normalizedParameters">&nbsp;</pre></td></tr>
