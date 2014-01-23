@@ -133,7 +133,7 @@ function createCORSRequest(method, url) {
 
 function doRequest() {
 
-var url = "http://google.com";
+var url = "http://192.168.2.7:8080/rest/api/2/project";
 
 var xhr = createCORSRequest('GET', url);
 if (!xhr) {
@@ -156,8 +156,8 @@ if (!xhr) {
   };
   
 xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');  
-//xhr.setRequestHeader('Authorization', "Basic YWRtaW46YWRtaW4=");
-//xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
+xhr.setRequestHeader('Authorization', "Basic YWRtaW46YWRtaW4=");
+xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
 //xhr.withCredentials = true;
 xhr.send();
 /*
